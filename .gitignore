@@ -1,41 +1,72 @@
-# Prerequisites
-*.d
+# -----------------------------
+# CMake / Ninja / build outputs
+# -----------------------------
+[Bb]uild*/
+[Cc]Make[Bb]uild*/
+out/build/
+out/install/
+out/tests/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+Testing/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
+# CMake user-local presets
+CMakeUserPresets.json
+
+# -----------------------------
+# Visual Studio (CMake workflow)
+# -----------------------------
+.vs/
+*.VC.db
+*.VC.opendb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+ipch/
+
+# -----------------------------
+# Compiled / linked artifacts
+# -----------------------------
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
+*.o
+*.lo
+*.slo
 *.a
+*.la
+*.lai
 *.lib
-
-# Executables
+*.dll
+*.dylib
+*.so
 *.exe
 *.out
 *.app
 
-# debug information files
+# -----------------------------
+# Debug / symbols / intermediates
+# -----------------------------
+*.pdb
+*.ilk
+*.idb
 *.dwo
+*.d
+*.gch
+*.pch
+*.mod
+*.smod
+
+# -----------------------------
+# Logs / temp
+# -----------------------------
+*.log
+*.tmp
+*.cache
+
+# -----------------------------
+# Keep this if you use local package trees
+# -----------------------------
