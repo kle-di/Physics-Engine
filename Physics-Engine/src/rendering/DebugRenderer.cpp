@@ -67,7 +67,7 @@ namespace PhysicsEngine::rendering
         return m_sdlReady && m_window != nullptr && m_renderer != nullptr;
     }
 
-    bool DebugRenderer::PumpEvents()
+    bool DebugRenderer::PumpEvents(const std::function<void(const SDL_Event&)>& eventHandler)
     {
         SDL_Event event{};
         while (SDL_PollEvent(&event) != 0)
@@ -76,6 +76,8 @@ namespace PhysicsEngine::rendering
             {
                 return false;
             }
+
+            eventHandler(event);
         }
 
         return true;

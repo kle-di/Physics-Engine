@@ -1,7 +1,10 @@
 #pragma once
 
+#include <functional>
+
 #include "Physics-Engine/core/World.h"
 
+union SDL_Event;
 struct SDL_Renderer;
 struct SDL_Window;
 
@@ -24,7 +27,7 @@ namespace PhysicsEngine::rendering
         /** @return True if SDL objects were initialized successfully. */
         [[nodiscard]] bool IsValid() const;
         /** @return False when quit event is requested; otherwise true. */
-        [[nodiscard]] bool PumpEvents();
+        [[nodiscard]] bool PumpEvents(const std::function<void(const SDL_Event&)>& eventHandler);
 
         void Clear();
         /**

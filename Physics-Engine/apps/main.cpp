@@ -2,41 +2,44 @@
 #include <chrono>
 #include <iostream>
 
+#include "MouseInteractionController.h"
 #include "Physics-Engine/collision/Shapes.h"
 #include "Physics-Engine/core/World.h"
 
 #if PHYSICSENGINE_HAS_SDL2
+#define SDL_MAIN_HANDLED
 #include "Physics-Engine/rendering/DebugRenderer.h"
+#include <SDL.h>
 #endif
 
 int main()
 {
-    PhysicsEngine::core::World world(1.0f / 60.0f);
+    PhysicsEngine::core::World world(1.0f / 120.0f);
     world.SetGravity({ 0.0f, 9.8f });
 
     PhysicsEngine::dynamics::RigidBodyDesc floorDesc{};
     floorDesc.position = { 0.0f, 3.71f };
     floorDesc.mass = 0.0f;
     floorDesc.inertia = 0.0f;
-    world.CreatePolygonBody(floorDesc, PhysicsEngine::collision::PolygonShape::CreateBox(6.7f, 0.08f));
+    world.CreatePolygonBody(floorDesc, PhysicsEngine::collision::PolygonShape::CreateBox(6.7f, 0.2f));
 
     PhysicsEngine::dynamics::RigidBodyDesc ceilingDesc{};
     ceilingDesc.position = { 0.0f, -3.71f };
     ceilingDesc.mass = 0.0f;
     ceilingDesc.inertia = 0.0f;
-    world.CreatePolygonBody(ceilingDesc, PhysicsEngine::collision::PolygonShape::CreateBox(6.7f, 0.08f));
+    world.CreatePolygonBody(ceilingDesc, PhysicsEngine::collision::PolygonShape::CreateBox(6.7f, 0.2f));
 
     PhysicsEngine::dynamics::RigidBodyDesc leftWallDesc{};
     leftWallDesc.position = { -6.62f, 0.0f };
     leftWallDesc.mass = 0.0f;
     leftWallDesc.inertia = 0.0f;
-    world.CreatePolygonBody(leftWallDesc, PhysicsEngine::collision::PolygonShape::CreateBox(0.08f, 4.0f));
+    world.CreatePolygonBody(leftWallDesc, PhysicsEngine::collision::PolygonShape::CreateBox(0.2f, 4.0f));
 
     PhysicsEngine::dynamics::RigidBodyDesc rightWallDesc{};
     rightWallDesc.position = { 6.62f, 0.0f };
     rightWallDesc.mass = 0.0f;
     rightWallDesc.inertia = 0.0f;
-    world.CreatePolygonBody(rightWallDesc, PhysicsEngine::collision::PolygonShape::CreateBox(0.08f, 4.0f));
+    world.CreatePolygonBody(rightWallDesc, PhysicsEngine::collision::PolygonShape::CreateBox(0.2f, 4.0f));
 
     auto spawnBox = [&](const PhysicsEngine::math::Vec2& position,
                         const PhysicsEngine::math::Vec2& velocity,
@@ -66,7 +69,7 @@ int main()
     {
         PhysicsEngine::dynamics::RigidBodyDesc desc{};
         desc.position = position;
-        desc.linearVelocity = {velocity.x, velocity.y };
+        desc.linearVelocity = { velocity.x, velocity.y };
         desc.mass = mass;
         desc.restitution = restitution;
         desc.friction = friction;
@@ -80,10 +83,10 @@ int main()
     spawnCircle({ 3.2f, -1.9f }, { 0.0f, -0.15f }, 0.42f, 1.1f, 0.60f, 0.30f);
 
     // Box stack stability test.
-    spawnBox({ -5.2f, 3.2f }, { 0.0f, 0.0f }, 0.35f, 0.35f, 1.0f, 0.05f, 0.8f, 0.0f);
-    spawnBox({ -5.2f, 2.45f }, { 0.0f, 0.0f }, 0.35f, 0.35f, 1.0f, 0.05f, 0.8f, 0.0f);
-    spawnBox({ -5.2f, 1.7f }, { 0.0f, 0.0f }, 0.35f, 0.35f, 1.0f, 0.05f, 0.8f, 0.0f);
-    spawnBox({ -5.2f, 0.95f }, { 0.0f, 0.0f }, 0.35f, 0.35f, 1.0f, 0.05f, 0.8f, 0.0f);
+    spawnBox({ -5.0f, 0.2f }, { 0.0f, 0.0f }, 0.35f, 0.35f, 1.0f, 0.05f, 0.8f, 0.0f);
+    spawnBox({ -5.2f, 1.2f }, { 0.0f, 0.0f }, 0.35f, 0.35f, 1.0f, 0.05f, 0.8f, 0.0f);
+    spawnBox({ -5.0f, 3.2f }, { 0.0f, 0.0f }, 0.35f, 0.35f, 1.0f, 0.05f, 0.8f, 0.0f);
+    spawnBox({ -5.2f, 2.2f }, { 0.0f, 0.0f }, 0.35f, 0.35f, 1.0f, 0.05f, 0.8f, 0.0f);
 
     // Mixed mass-ratio and friction test.
     spawnBox({ -0.2f, 2.8f }, { 0.0f, 0.0f }, 0.45f, 0.45f, 4.0f, 0.03f, 0.9f, 0.0f);
@@ -95,25 +98,37 @@ int main()
     spawnBox({ 4.3f, 1.55f }, { 0.0f, 0.0f }, 0.6f, 0.20f, 0.9f, 0.02f, 0.95f, -0.4f);
 
 #if PHYSICSENGINE_HAS_SDL2
-    PhysicsEngine::rendering::DebugRenderer renderer(1280, 720, 95.0f);
+    constexpr int windowWidth = 1280;
+    constexpr int windowHeight = 720;
+    constexpr float pixelsPerUnit = 95.0f;
+
+    PhysicsEngine::rendering::DebugRenderer renderer(windowWidth, windowHeight, pixelsPerUnit);
     if (!renderer.IsValid())
     {
         std::cerr << "SDL2 renderer init failed.\n";
         return 1;
     }
 
+    PhysicsEngine::app::MouseInteractionController mouseInput(windowWidth, windowHeight, pixelsPerUnit);
+
     using clock = std::chrono::steady_clock;
     auto previous = clock::now();
-    constexpr float maxFrameTime = 1.0f / 30.0f;
+    constexpr float maxFrameTime = 1.0f / 60.0f;
 
     bool running = true;
     while (running)
     {
-        running = renderer.PumpEvents();
+        running = renderer.PumpEvents(
+            [&](const SDL_Event& event)
+            {
+                mouseInput.HandleEvent(event, world);
+            });
 
         const auto now = clock::now();
         const std::chrono::duration<float> frameTime = now - previous;
         previous = now;
+
+        mouseInput.Update(world, std::min(frameTime.count(), maxFrameTime));
 
         world.Step(std::min(frameTime.count(), maxFrameTime));
         renderer.Clear();

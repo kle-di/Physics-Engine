@@ -1,5 +1,6 @@
 #include "Physics-Engine/dynamics/RigidBody.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace PhysicsEngine::dynamics
@@ -7,7 +8,7 @@ namespace PhysicsEngine::dynamics
     namespace
     {
         constexpr float kMinDynamicValue = 1.0e-6f;
-        constexpr float kMaxLinearSpeed = 24.0f;
+        constexpr float kMaxLinearSpeed = 12.0f;
         constexpr float kMaxAngularSpeed = 30.0f;
     }
 
@@ -27,6 +28,12 @@ namespace PhysicsEngine::dynamics
     {
         mass = massValue;
         inverseMass = massValue > kMinDynamicValue ? 1.0f / massValue : 0.0f;
+
+        if (IsStatic())
+        {
+            m_isAwake = false;
+            m_sleepTimer = 0.0f;
+        }
     }
 
     void RigidBody::SetInertia(float inertiaValue)
@@ -42,6 +49,7 @@ namespace PhysicsEngine::dynamics
             return;
         }
 
+        SetAwake(true);
         forceAccumulator += force;
     }
 
@@ -52,13 +60,14 @@ namespace PhysicsEngine::dynamics
             return;
         }
 
+        SetAwake(true);
         linearVelocity += impulse * inverseMass;
         angularVelocity += inverseInertia * math::Vec2::Cross(contactVector, impulse);
     }
 
     void RigidBody::IntegrateForces(float dt)
     {
-        if (IsStatic())
+        if (IsStatic() || !IsAwake())
         {
             return;
         }
@@ -69,7 +78,7 @@ namespace PhysicsEngine::dynamics
 
     void RigidBody::IntegrateVelocity(float dt)
     {
-        if (IsStatic())
+        if (IsStatic() || !IsAwake())
         {
             return;
         }
@@ -102,5 +111,59 @@ namespace PhysicsEngine::dynamics
     bool RigidBody::IsStatic() const
     {
         return inverseMass == 0.0f;
+    }
+
+    bool RigidBody::IsAwake() const
+    {
+        return !IsStatic() && m_isAwake;
+    }
+
+    void RigidBody::SetAwake(bool awake)
+    {
+        if (IsStatic())
+        {
+            return;
+        }
+
+        m_isAwake = awake;
+        if (awake)
+        {
+            m_sleepTimer = 0.0f;
+            return;
+        }
+
+        m_sleepTimer = 0.0f;
+        linearVelocity = {};
+        angularVelocity = 0.0f;
+        ClearAccumulators();
+    }
+
+    void RigidBody::UpdateSleepState(float dt, float linearSleepThreshold, float angularSleepThreshold, float timeToSleep)
+    {
+        if (IsStatic())
+        {
+            return;
+        }
+
+        if (!m_isAwake)
+        {
+            return;
+        }
+
+        const float linearThresholdSq = linearSleepThreshold * linearSleepThreshold;
+        const float linearSpeedSq = linearVelocity.LengthSquared();
+        const float angularSpeed = std::abs(angularVelocity);
+
+        if (linearSpeedSq > linearThresholdSq || angularSpeed > angularSleepThreshold)
+        {
+            m_sleepTimer = 0.0f;
+            return;
+        }
+
+        m_sleepTimer += std::max(dt, 0.0f);
+        if (m_sleepTimer >= timeToSleep)
+        {
+            SetAwake(false);
+        }
     }
 }

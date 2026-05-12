@@ -61,6 +61,19 @@ namespace PhysicsEngine::dynamics
 
         /** @return True when body is static (non-dynamic). */
         bool IsStatic() const;
+        /** @return True when body participates in simulation updates. */
+        bool IsAwake() const;
+        /**
+         * @param awake Whether the body should be active.
+         */
+        void SetAwake(bool awake = true);
+        /**
+         * @param dt Time step in seconds.
+         * @param linearSleepThreshold Linear speed threshold.
+         * @param angularSleepThreshold Angular speed threshold.
+         * @param timeToSleep Time below threshold before sleeping.
+         */
+        void UpdateSleepState(float dt, float linearSleepThreshold, float angularSleepThreshold, float timeToSleep);
 
         math::Vec2 position{};
         float rotation{ 0.0f };
@@ -79,5 +92,9 @@ namespace PhysicsEngine::dynamics
 
         float restitution{ 0.2f };
         float friction{ 0.5f };
+
+    private:
+        bool m_isAwake{ true };
+        float m_sleepTimer{ 0.0f };
     };
 }
